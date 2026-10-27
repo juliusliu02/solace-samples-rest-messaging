@@ -1,0 +1,4 @@
+<Solution>
+  <Project Path="../Resources/Resources.csproj" />
+  <Project Path="RestAvroSchemaPublisher/RestAvroSchemaPublisher.csproj" />
+</Solution>
