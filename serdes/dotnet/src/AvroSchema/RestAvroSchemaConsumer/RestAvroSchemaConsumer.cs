@@ -50,7 +50,6 @@ namespace RestAvroSchemaConsumer
         /// </summary>
         /// <param name="args">Command line arguments: &lt;post-request-target&gt; [&lt;port&gt;] [&lt;http-topic-header-key&gt;]</param>
         /// <returns>0 on success, 1 on failure</returns>
-        /// 
         static async Task<int> Main(string[] args)
         {
             if (args.Length < 1)
@@ -145,7 +144,7 @@ namespace RestAvroSchemaConsumer
         /// Handles an incoming HTTP request.
         /// </summary>
         /// <param name="context">The HTTP listener context</param>
-        /// <param name="deserializer">The JSON Schema deserializer</param>
+        /// <param name="deserializer">The Avro deserializer</param>
         /// <param name="httpTopicHeaderKey">Optional HTTP header key containing the topic</param>
         private static async Task HandleRequestAsync(HttpListenerContext context, AvroDeserializer<User> deserializer, string httpTopicHeaderKey)
         {
@@ -180,7 +179,7 @@ namespace RestAvroSchemaConsumer
         /// Handles a SERDES message by extracting headers, deserializing payload, and sending a response.
         /// </summary>
         /// <param name="context">The HTTP listener context</param>
-        /// <param name="deserializer">The JSON Schema deserializer</param>
+        /// <param name="deserializer">The Avro deserializer</param>
         /// <param name="httpTopicHeaderKey">Optional HTTP header key containing the topic</param>
         private static async Task HandleSerdesMessageAsync(HttpListenerContext context, AvroDeserializer<User> deserializer, string httpTopicHeaderKey)
         {
@@ -272,7 +271,7 @@ namespace RestAvroSchemaConsumer
         }
 
         /// <summary>
-        /// Returns a configuration dictionary for the JSON Schema deserializer.
+        /// Returns a configuration dictionary for the Avro deserializer.
         /// Contains the Schema Registry URL and authentication credentials.
         /// </summary>
         /// <returns>A dictionary containing configuration properties</returns>

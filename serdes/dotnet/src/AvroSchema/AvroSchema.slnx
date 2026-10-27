@@ -1,5 +1,0 @@
-<Solution>
-  <Project Path="../Resources/Resources.csproj" />
-  <Project Path="RestAvroSchemaConsumer/RestAvroSchemaConsumer.csproj" />
-  <Project Path="RestAvroSchemaPublisher/RestAvroSchemaPublisher.csproj" />
-</Solution>

@@ -1,4 +1,20 @@
-﻿using System;
+/*
+ * Copyright 2026 Solace Corporation. All rights reserved.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * https://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+using System;
 using System.Collections.Generic;
 using System.Net.Http;
 using System.Net.Http.Headers;
@@ -202,6 +218,7 @@ namespace RestAvroSchemaPublisher
         /// Returns a configuration dictionary for the Avro Schema serializer.
         /// Contains the Schema Registry URL and authentication credentials.
         /// Configures the schema header identifier as a String type.
+        /// Sets the Avro encoding to JSON when CONTENT_TYPE is JSON, otherwise BINARY.
         /// </summary>
         /// <returns>A dictionary containing configuration properties</returns>
         private static Dictionary<string, object> GetSchemaRegistryConfig()
@@ -212,7 +229,9 @@ namespace RestAvroSchemaPublisher
                 { AvroPropertyKeys.AuthUsername, RegistryUsername },
                 { AvroPropertyKeys.AuthPassword, RegistryPassword },
                 // This configuration property will populate the SERDES header with a schema ID that is of type String
-                { AvroPropertyKeys.SchemaHeaderIdentifiers, SchemaHeaderId.SchemaIdString }
+                { AvroPropertyKeys.SchemaHeaderIdentifiers, SchemaHeaderId.SchemaIdString },
+                // The Avro encoding must match the Content-Type so that a JSON Content-Type carries JSON-encoded Avro
+                { AvroPropertyKeys.EncodingType, ContentType == "JSON" ? AvroProperties.AvroEncoding.Json : AvroProperties.AvroEncoding.Binary }
             };
         }
 
