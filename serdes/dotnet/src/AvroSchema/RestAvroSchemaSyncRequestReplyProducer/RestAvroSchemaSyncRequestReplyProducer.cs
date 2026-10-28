@@ -31,12 +31,12 @@ namespace RestAvroSchemaSyncRequestReplyProducer
     /// This class demonstrates how to use HttpClient with Avro Schema SERDES to send and receive synchronous request-reply messages over REST.
     /// This sample performs the following steps:
     /// <list type="number">
-    ///   <item>Configures a AvroSerializer to serialize a request object (e.g., CreateUser) into a JSON payload.</item>
+    ///   <item>Configures an AvroSerializer to serialize a request object (e.g., CreateUser) into an Avro payload.</item>
     ///   <item>Constructs an HTTP POST request targeting a specific topic on the broker.</item>
     ///   <item>Uses the Solace-Reply-Wait-Time-In-ms header to instruct the broker to hold the HTTP connection open and wait for a reply from a consumer application.</item>
     ///   <item>Sends the request and synchronously blocks, waiting for the HTTP response from the broker.</item>
     ///   <item>Upon receiving the response, it extracts the reply payload from the HTTP response body.</item>
-    ///   <item>Uses a AvroDeserializer to deserialize the reply payload into a response object (e.g., CreateUserResponse).</item>
+    ///   <item>Uses an AvroDeserializer to deserialize the reply payload into a response object (e.g., CreateUserResponse).</item>
     /// </list>
     /// </summary>
     class RestAvroSchemaSyncRequestReplyProducer : IDisposable
@@ -268,7 +268,7 @@ namespace RestAvroSchemaSyncRequestReplyProducer
                 // This configuration property will populate the SERDES header with a schema ID that is of type String
                 { AvroPropertyKeys.SchemaHeaderIdentifiers, SchemaHeaderId.SchemaIdString },
                 // The Avro encoding must match the Content-Type so that a JSON Content-Type carries JSON-encoded Avro
-                { AvroPropertyKeys.EncodingType, ContentType == "JSON" ? AvroProperties.AvroEncoding.Json : AvroProperties.AvroEncoding.Binary }
+                { AvroPropertyKeys.EncodingType, "JSON".Equals(ContentType, StringComparison.OrdinalIgnoreCase) ? AvroProperties.AvroEncoding.Json : AvroProperties.AvroEncoding.Binary }
             };
         }
 

@@ -23,9 +23,14 @@ using System.Threading.Tasks;
 using Solace.SchemaRegistry.Serdes.Avro;
 using Resources.Serdes.AvroSchema;
 
-namespace RestAvroSchemaPublisher
+namespace RestAvroSchemaPublisherWithSchemaId
 {
-    class RestAvroSchemaPublisher : IDisposable
+    /// <summary>
+    /// This class demonstrates how to use HttpClient with Avro Schema serialization to produce messages over REST.
+    /// It serializes messages using the AvroSerializer and publishes them to a topic on a Solace message broker using HTTP POST requests.
+    /// The schema ID is sent as a Long (int64) type in the Solace-User-Property header with a type suffix.
+    /// </summary>
+    class RestAvroSchemaPublisherWithSchemaId : IDisposable
     {
 
         private static readonly string RegistryUrl = Environment.GetEnvironmentVariable("REGISTRY_URL") ?? "http://localhost:8081/apis/registry/v3";
@@ -57,7 +62,7 @@ namespace RestAvroSchemaPublisher
         /// </summary>
         /// <param name="brokerHost">The hostname or IP address of the broker</param>
         /// <param name="port">The port of the broker</param>
-        public RestAvroSchemaPublisher(string brokerHost, int port)
+        public RestAvroSchemaPublisherWithSchemaId(string brokerHost, int port)
         {
             _brokerHost = brokerHost;
             _port = port;
@@ -77,7 +82,7 @@ namespace RestAvroSchemaPublisher
         {
             if (args.Length < 2)
             {
-                Console.WriteLine($"Usage: {typeof(RestAvroSchemaPublisher).Name} <host> <port>");
+                Console.WriteLine($"Usage: {typeof(RestAvroSchemaPublisherWithSchemaId).Name} <host> <port>");
                 Console.WriteLine();
                 Console.WriteLine("Schema Registry connection can be configured via environment variables:");
                 Console.WriteLine("  REGISTRY_URL (default: http://localhost:8081/apis/registry/v3)");
@@ -98,7 +103,7 @@ namespace RestAvroSchemaPublisher
 
             try
             {
-                using (var publisher = new RestAvroSchemaPublisher(host, portNumber))
+                using (var publisher = new RestAvroSchemaPublisherWithSchemaId(host, portNumber))
                 using (var serializer = new AvroSerializer<User>())
                 {
                     // Configure the Schema Registry connection for the serializer
@@ -183,7 +188,7 @@ namespace RestAvroSchemaPublisher
                 var headers = new Dictionary<string, object>();
                 byte[] payload = await serializer.SerializeAsync(topic, user, headers);
 
-                // Add SERDES headers as Solace-User-Property-* headers (without type suffix)
+                // Add SERDES headers as Solace-User-Property-* headers with type suffix (e.g., "123; type=int64")
                 AddSerdesHeaders(request, headers);
 
                 // Set content type and payload
@@ -216,7 +221,7 @@ namespace RestAvroSchemaPublisher
         /// <summary>
         /// Returns a configuration dictionary for the Avro Schema serializer.
         /// Contains the Schema Registry URL and authentication credentials.
-        /// Configures the schema header identifier as a String type.
+        /// Uses the default schema header identifier, which is a Long (int64) type.
         /// Sets the Avro encoding to JSON when CONTENT_TYPE is JSON, otherwise BINARY.
         /// </summary>
         /// <returns>A dictionary containing configuration properties</returns>
@@ -228,7 +233,7 @@ namespace RestAvroSchemaPublisher
                 { AvroPropertyKeys.AuthUsername, RegistryUsername },
                 { AvroPropertyKeys.AuthPassword, RegistryPassword },
                 // The Avro encoding must match the Content-Type so that a JSON Content-Type carries JSON-encoded Avro
-                { AvroPropertyKeys.EncodingType, ContentType == "JSON" ? AvroProperties.AvroEncoding.Json : AvroProperties.AvroEncoding.Binary }
+                { AvroPropertyKeys.EncodingType, "JSON".Equals(ContentType, StringComparison.OrdinalIgnoreCase) ? AvroProperties.AvroEncoding.Json : AvroProperties.AvroEncoding.Binary }
                 // Default schema header identifier is Long (int64) type
             };
         }

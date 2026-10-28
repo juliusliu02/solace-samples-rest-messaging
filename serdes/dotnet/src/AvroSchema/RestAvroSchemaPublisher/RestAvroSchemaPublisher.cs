@@ -26,6 +26,11 @@ using Resources.Serdes.AvroSchema;
 
 namespace RestAvroSchemaPublisher
 {
+    /// <summary>
+    /// This class demonstrates how to use HttpClient with Avro Schema serialization to produce messages over REST.
+    /// It serializes messages using the AvroSerializer and publishes them to a topic on a Solace message broker using HTTP POST requests.
+    /// The schema ID is sent as a String type in the Solace-User-Property header.
+    /// </summary>
     class RestAvroSchemaPublisher : IDisposable
     {
 
@@ -231,7 +236,7 @@ namespace RestAvroSchemaPublisher
                 // This configuration property will populate the SERDES header with a schema ID that is of type String
                 { AvroPropertyKeys.SchemaHeaderIdentifiers, SchemaHeaderId.SchemaIdString },
                 // The Avro encoding must match the Content-Type so that a JSON Content-Type carries JSON-encoded Avro
-                { AvroPropertyKeys.EncodingType, ContentType == "JSON" ? AvroProperties.AvroEncoding.Json : AvroProperties.AvroEncoding.Binary }
+                { AvroPropertyKeys.EncodingType, "JSON".Equals(ContentType, StringComparison.OrdinalIgnoreCase) ? AvroProperties.AvroEncoding.Json : AvroProperties.AvroEncoding.Binary }
             };
         }
 

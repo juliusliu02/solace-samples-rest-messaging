@@ -146,7 +146,9 @@ Every sample reads its Schema Registry and topic settings from environment varia
 
 Run samples with `dotnet run` from within the project directory, or by invoking the built binary directly from `bin/Debug/net8.0/`.
 
-### Publisher
+### JSON Schema Samples
+
+#### Publisher
 
 Publishes `User` messages continuously until Enter is pressed. The schema ID is sent as a `String` header.
 
@@ -157,7 +159,7 @@ dotnet run -- <host> <port>
 dotnet run -- localhost 9000
 ```
 
-### Publisher With Schema Id (int64)
+#### Publisher With Schema Id (int64)
 
 Identical behaviour to the publisher above, but the schema ID is written as an `int64` value with a `; type=int64` header suffix.
 
@@ -168,7 +170,7 @@ dotnet run -- <host> <port>
 dotnet run -- localhost 9000
 ```
 
-### Consumer
+#### Consumer
 
 Starts a local HTTP server that accepts POSTs from a Solace RDP.
 
@@ -186,7 +188,7 @@ dotnet run -- /message 8080 X-Solace-Topic
 > [!NOTE]
 > On Windows, `HttpListener` may require the URL prefix to be reserved (run as administrator or use `netsh http add urlacl`). On macOS and Linux this is not needed.
 
-### Synchronous Request/Reply Producer
+#### Synchronous Request/Reply Producer
 
 Sends a `CreateUser` request over REST and reads the `CreateUserResponse` from the HTTP response body.
 
@@ -197,7 +199,7 @@ dotnet run -- <host> <port>
 dotnet run -- localhost 9000
 ```
 
-### Synchronous Request/Reply Consumer
+#### Synchronous Request/Reply Consumer
 
 Listens for `CreateUser` requests and replies synchronously in the HTTP response.
 
@@ -208,7 +210,7 @@ dotnet run -- <post-request-target> [<port>] [<http-topic-header-key>]
 dotnet run -- /message 8080 X-Solace-Topic
 ```
 
-### Asynchronous Request/Reply
+#### Asynchronous Request/Reply
 
 Publishes a `CreateUser` request over HTTP and concurrently listens on a second port for the `CreateUserResponse` that the broker delivers via an RDP.
 
@@ -221,35 +223,59 @@ dotnet run -- localhost 9000 /message 38081
 
 ### Avro Samples
 
-Each Avro sample takes the same arguments as its JSON Schema equivalent above.
+Each Avro sample takes the same arguments and behaves the same way as its JSON Schema equivalent above.
+
+#### Publisher
 
 ```shell
 cd src/AvroSchema/RestAvroSchemaPublisher
+dotnet run -- <host> <port>
+# Example: publish to a broker on localhost with REST publishing port 9000
 dotnet run -- localhost 9000
 ```
+
+#### Publisher With Schema Id (int64)
 
 ```shell
 cd src/AvroSchema/RestAvroSchemaPublisherWithSchemaId
+dotnet run -- <host> <port>
+# Example: publish to a broker on localhost with REST publishing port 9000
 dotnet run -- localhost 9000
 ```
+
+#### Consumer
 
 ```shell
 cd src/AvroSchema/RestAvroSchemaConsumer
+dotnet run -- <post-request-target> [<port>] [<http-topic-header-key>]
+# Example: listen on http://localhost:8080/message and read the topic from the "X-Solace-Topic" header
 dotnet run -- /message 8080 X-Solace-Topic
 ```
+
+#### Synchronous Request/Reply Producer
 
 ```shell
 cd src/AvroSchema/RestAvroSchemaSyncRequestReplyProducer
+dotnet run -- <host> <port>
+# Example: send a request to a broker on localhost with REST publishing port 9000
 dotnet run -- localhost 9000
 ```
 
+#### Synchronous Request/Reply Consumer
+
 ```shell
 cd src/AvroSchema/RestAvroSchemaSyncRequestReplyConsumer
+dotnet run -- <post-request-target> [<port>] [<http-topic-header-key>]
+# Example: listen on http://localhost:8080/message and read the topic from the "X-Solace-Topic" header
 dotnet run -- /message 8080 X-Solace-Topic
 ```
 
+#### Asynchronous Request/Reply Producer
+
 ```shell
 cd src/AvroSchema/RestAvroSchemaAsyncRequestReplyProducer
+dotnet run -- <host> <publishing-port> <reply-post-request-target> <listen-port> [<http-topic-header-key>]
+# Example:
 dotnet run -- localhost 9000 /message 38081
 ```
 

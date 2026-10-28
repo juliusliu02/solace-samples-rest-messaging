@@ -28,22 +28,22 @@ using Resources.Serdes.AvroSchema;
 using Solace.Serdes;
 
 
-namespace RestAvroSchemaAsyncRequestReply
+namespace RestAvroSchemaAsyncRequestReplyProducer
 {
     /// <summary>
     /// This class demonstrates how to use HttpClient with Avro Schema SERDES to send and receive asynchronous request-reply messages over REST.
     /// This sample performs the following steps:
     /// <list type="number">
     ///   <item>Starts an embedded HTTP server to listen for the asynchronous reply message.</item>
-    ///   <item>Configures a AvroSerializer to serialize a request object (e.g., CreateUser) into a JSON payload.</item>
+    ///   <item>Configures an AvroSerializer to serialize a request object (e.g., CreateUser) into an Avro payload.</item>
     ///   <item>Constructs an HTTP POST request targeting a specific topic on the broker.</item>
     ///   <item>Uses the Solace-Reply-To-Destination header to specify where the consumer should send the reply.</item>
     ///   <item>Sends the request and receives an immediate 200 OK from the broker.</item>
     ///   <item>When the consumer application sends the reply, the embedded HTTP server receives it.</item>
-    ///   <item>Uses a AvroDeserializer to deserialize the reply payload into a response object (e.g., CreateUserResponse).</item>
+    ///   <item>Uses an AvroDeserializer to deserialize the reply payload into a response object (e.g., CreateUserResponse).</item>
     /// </list>
     /// </summary>
-    class RestAvroSchemaAsyncRequestReply : IDisposable
+    class RestAvroSchemaAsyncRequestReplyProducer : IDisposable
     {
         private static readonly string RegistryUrl = Environment.GetEnvironmentVariable("REGISTRY_URL") ?? "http://localhost:8081/apis/registry/v3";
         private static readonly string RegistryUsername = Environment.GetEnvironmentVariable("REGISTRY_USERNAME") ?? "sr-readonly";
@@ -71,7 +71,7 @@ namespace RestAvroSchemaAsyncRequestReply
         /// <param name="publishingPort">The publishing port of the broker</param>
         /// <param name="listenPort">The port for the embedded reply server</param>
         /// <param name="replyPostRequestTarget">The POST request target for replies</param>
-        public RestAvroSchemaAsyncRequestReply(string brokerHost, int publishingPort, int listenPort, string replyPostRequestTarget)
+        public RestAvroSchemaAsyncRequestReplyProducer(string brokerHost, int publishingPort, int listenPort, string replyPostRequestTarget)
         {
             _brokerHost = brokerHost;
             _publishingPort = publishingPort;
@@ -94,7 +94,7 @@ namespace RestAvroSchemaAsyncRequestReply
         {
             if (args.Length < 4)
             {
-                Console.WriteLine($"Usage: {typeof(RestAvroSchemaAsyncRequestReply).Name} <host> <publishing-port> <reply-post-request-target> <listen-port> [<http-topic-header-key>]");
+                Console.WriteLine($"Usage: {typeof(RestAvroSchemaAsyncRequestReplyProducer).Name} <host> <publishing-port> <reply-post-request-target> <listen-port> [<http-topic-header-key>]");
                 Console.WriteLine();
                 Console.WriteLine("Schema Registry connection can be configured via environment variables:");
                 Console.WriteLine("  REGISTRY_URL (default: http://localhost:8081/apis/registry/v3)");
@@ -129,7 +129,7 @@ namespace RestAvroSchemaAsyncRequestReply
 
             try
             {
-                using (var producer = new RestAvroSchemaAsyncRequestReply(host, publishingPort, listenPort, replyPostRequestTarget))
+                using (var producer = new RestAvroSchemaAsyncRequestReplyProducer(host, publishingPort, listenPort, replyPostRequestTarget))
                 using (var serializer = new AvroSerializer<CreateUser>())
                 using (var deserializer = new AvroDeserializer<CreateUserResponse>())
                 {
@@ -446,7 +446,7 @@ namespace RestAvroSchemaAsyncRequestReply
                 // This configuration property will populate the SERDES header with a schema ID that is of type String
                 { AvroPropertyKeys.SchemaHeaderIdentifiers, SchemaHeaderId.SchemaIdString },
                 // The Avro encoding must match the Content-Type so that a JSON Content-Type carries JSON-encoded Avro
-                { AvroPropertyKeys.EncodingType, ContentType == "JSON" ? AvroProperties.AvroEncoding.Json : AvroProperties.AvroEncoding.Binary }
+                { AvroPropertyKeys.EncodingType, "JSON".Equals(ContentType, StringComparison.OrdinalIgnoreCase) ? AvroProperties.AvroEncoding.Json : AvroProperties.AvroEncoding.Binary }
             };
         }
 

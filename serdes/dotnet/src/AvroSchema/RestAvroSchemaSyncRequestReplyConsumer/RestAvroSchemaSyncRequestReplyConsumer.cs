@@ -34,10 +34,10 @@ namespace RestAvroSchemaSyncRequestReplyConsumer
     /// This class demonstrates how to use HttpListener with Avro Schema SERDES to receive and send synchronous request-reply messages over REST.
     /// This sample performs the following steps:
     /// <list type="number">
-    ///   <item>Configures a AvroDeserializer to deserialize an incoming request payload from an HTTP request body into a request object (e.g., CreateUser).</item>
+    ///   <item>Configures an AvroDeserializer to deserialize an incoming request payload from an HTTP request body into a request object (e.g., CreateUser).</item>
     ///   <item>Listens for an HTTP POST request from the Solace event broker, which is triggered by a producer sending a request message.</item>
     ///   <item>After processing the deserialized request, it creates a reply object (e.g., CreateUserResponse).</item>
-    ///   <item>Uses a AvroSerializer to serialize the reply object.</item>
+    ///   <item>Uses an AvroSerializer to serialize the reply object.</item>
     ///   <item>Sends the serialized reply payload back to the broker by writing it into the HTTP response body with a 200 OK status.</item>
     ///   <item>The broker then delivers this HTTP response payload back to the original requesting client, completing the exchange.</item>
     /// </list>
@@ -420,7 +420,7 @@ namespace RestAvroSchemaSyncRequestReplyConsumer
                 // This configuration property will populate the SERDES header with a schema ID that is of type String
                 { AvroPropertyKeys.SchemaHeaderIdentifiers, SchemaHeaderId.SchemaIdString },
                 // The Avro encoding must match the Content-Type so that a JSON Content-Type carries JSON-encoded Avro
-                { AvroPropertyKeys.EncodingType, ContentType == "JSON" ? AvroProperties.AvroEncoding.Json : AvroProperties.AvroEncoding.Binary }
+                { AvroPropertyKeys.EncodingType, "JSON".Equals(ContentType, StringComparison.OrdinalIgnoreCase) ? AvroProperties.AvroEncoding.Json : AvroProperties.AvroEncoding.Binary }
             };
         }
 
