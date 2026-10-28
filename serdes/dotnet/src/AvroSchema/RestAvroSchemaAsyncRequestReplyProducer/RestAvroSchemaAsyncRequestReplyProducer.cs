@@ -287,7 +287,7 @@ namespace RestAvroSchemaAsyncRequestReply
         /// Handles an asynchronous reply message received by the embedded HTTP server.
         /// </summary>
         /// <param name="context">The HTTP listener context</param>
-        /// <param name="deserializer">The JSON Schema deserializer for replies</param>
+        /// <param name="deserializer">The Avro deserializer for replies</param>
         /// <param name="httpTopicHeaderKey">Optional HTTP header key containing the topic</param>
         private static async Task HandleReplyAsync(
             HttpListenerContext context,
@@ -431,7 +431,7 @@ namespace RestAvroSchemaAsyncRequestReply
         }
 
         /// <summary>
-        /// Returns a configuration dictionary for the JSON Schema serializer.
+        /// Returns a configuration dictionary for the Avro serializer.
         /// Contains the Schema Registry URL and authentication credentials.
         /// Configures the schema header identifier as a String type.
         /// </summary>
@@ -444,12 +444,14 @@ namespace RestAvroSchemaAsyncRequestReply
                 { AvroPropertyKeys.AuthUsername, RegistryUsername },
                 { AvroPropertyKeys.AuthPassword, RegistryPassword },
                 // This configuration property will populate the SERDES header with a schema ID that is of type String
-                { AvroPropertyKeys.SchemaHeaderIdentifiers, SchemaHeaderId.SchemaIdString }
+                { AvroPropertyKeys.SchemaHeaderIdentifiers, SchemaHeaderId.SchemaIdString },
+                // The Avro encoding must match the Content-Type so that a JSON Content-Type carries JSON-encoded Avro
+                { AvroPropertyKeys.EncodingType, ContentType == "JSON" ? AvroProperties.AvroEncoding.Json : AvroProperties.AvroEncoding.Binary }
             };
         }
 
         /// <summary>
-        /// Returns a configuration dictionary for the JSON Schema deserializer.
+        /// Returns a configuration dictionary for the Avro deserializer.
         /// Contains the Schema Registry URL and authentication credentials.
         /// </summary>
         /// <returns>A dictionary containing configuration properties</returns>

@@ -31,7 +31,7 @@ using Resources.Serdes.AvroSchema;
 namespace RestAvroSchemaSyncRequestReplyConsumer
 {
     /// <summary>
-    /// This class demonstrates how to use HttpListener with JSON Schema SERDES to receive and send synchronous request-reply messages over REST.
+    /// This class demonstrates how to use HttpListener with Avro Schema SERDES to receive and send synchronous request-reply messages over REST.
     /// This sample performs the following steps:
     /// <list type="number">
     ///   <item>Configures a AvroDeserializer to deserialize an incoming request payload from an HTTP request body into a request object (e.g., CreateUser).</item>
@@ -48,6 +48,10 @@ namespace RestAvroSchemaSyncRequestReplyConsumer
         private static readonly string RegistryUsername = Environment.GetEnvironmentVariable("REGISTRY_USERNAME") ?? "sr-readonly";
         private static readonly string RegistryPassword = Environment.GetEnvironmentVariable("REGISTRY_PASSWORD") ?? "roPassword";
         private static readonly string ReplyTopic = Environment.GetEnvironmentVariable("REPLY_TOPIC") ?? "solace/samples/create-user-response/avro";
+        // BINARY Content-Type translates to Solace binary message and JSON Content-Type translates to Solace text message.
+        // For more details on Solace Message Type Mapping to HTTP Content-Type, see:
+        // https://docs.solace.com/API/RESTMessagingPrtl/Solace-REST-Message-Encoding.htm#solace-message-type-mapping-to-http-content-type
+        private static readonly string ContentType = Environment.GetEnvironmentVariable("CONTENT_TYPE") ?? "BINARY";
 
         private const string SolaceUserPropertyPrefixLower = "solace-user-property-";
 
@@ -175,8 +179,8 @@ namespace RestAvroSchemaSyncRequestReplyConsumer
         /// https://docs.solace.com/Services/Managing-RDPs.htm#configuring-http-status-codes
         /// </summary>
         /// <param name="context">The HTTP listener context</param>
-        /// <param name="deserializer">The JSON Schema deserializer for requests</param>
-        /// <param name="serializer">The JSON Schema serializer for replies</param>
+        /// <param name="deserializer">The Avro deserializer for requests</param>
+        /// <param name="serializer">The Avro serializer for replies</param>
         /// <param name="httpTopicHeaderKey">Optional HTTP header key containing the topic</param>
         private static async Task HandleRequestAsync(
             HttpListenerContext context,
@@ -234,8 +238,8 @@ namespace RestAvroSchemaSyncRequestReplyConsumer
         /// Handles a SERDES request-reply message by deserializing the request, creating a reply, and serializing the response.
         /// </summary>
         /// <param name="context">The HTTP listener context</param>
-        /// <param name="deserializer">The JSON Schema deserializer for requests</param>
-        /// <param name="serializer">The JSON Schema serializer for replies</param>
+        /// <param name="deserializer">The Avro deserializer for requests</param>
+        /// <param name="serializer">The Avro serializer for replies</param>
         /// <param name="httpTopicHeaderKey">Optional HTTP header key containing the topic</param>
         private static async Task HandleSerdesMessageAsync(
             HttpListenerContext context,
@@ -297,6 +301,7 @@ namespace RestAvroSchemaSyncRequestReplyConsumer
             Console.WriteLine("- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -");
 
             // Send the reply
+            SetContentType(context.Response, ContentType);
             await SendResponseAsync(context, 200, replyPayload);
         }
 
@@ -344,6 +349,31 @@ namespace RestAvroSchemaSyncRequestReplyConsumer
         }
 
         /// <summary>
+        /// Sets the Content-Type header of the HTTP response based on the content type string.
+        /// BINARY maps to application/octet-stream (Solace binary message).
+        /// JSON maps to application/json (Solace text message).
+        /// For more details on Solace Message Type Mapping to HTTP Content-Type, see:
+        /// https://docs.solace.com/API/RESTMessagingPrtl/Solace-REST-Message-Encoding.htm#solace-message-type-mapping-to-http-content-type
+        /// </summary>
+        /// <param name="response">The HTTP listener response</param>
+        /// <param name="contentType">The content type string (BINARY, JSON, or custom)</param>
+        private static void SetContentType(HttpListenerResponse response, string contentType)
+        {
+            if ("JSON".Equals(contentType, StringComparison.OrdinalIgnoreCase))
+            {
+                response.ContentType = "application/json";
+            }
+            else if ("BINARY".Equals(contentType, StringComparison.OrdinalIgnoreCase))
+            {
+                response.ContentType = "application/octet-stream";
+            }
+            else
+            {
+                response.ContentType = contentType;
+            }
+        }
+
+        /// <summary>
         /// Prints all HTTP headers to the console.
         /// </summary>
         /// <param name="headers">The name-value collection of headers</param>
@@ -360,7 +390,7 @@ namespace RestAvroSchemaSyncRequestReplyConsumer
         }
 
         /// <summary>
-        /// Returns a configuration dictionary for the JSON Schema deserializer.
+        /// Returns a configuration dictionary for the Avro deserializer.
         /// Contains the Schema Registry URL and authentication credentials.
         /// </summary>
         /// <returns>A dictionary containing configuration properties</returns>
@@ -375,7 +405,7 @@ namespace RestAvroSchemaSyncRequestReplyConsumer
         }
 
         /// <summary>
-        /// Returns a configuration dictionary for the JSON Schema serializer.
+        /// Returns a configuration dictionary for the Avro serializer.
         /// Contains the Schema Registry URL and authentication credentials.
         /// Configures the schema header identifier as a String type.
         /// </summary>
@@ -388,7 +418,9 @@ namespace RestAvroSchemaSyncRequestReplyConsumer
                 { AvroPropertyKeys.AuthUsername, RegistryUsername },
                 { AvroPropertyKeys.AuthPassword, RegistryPassword },
                 // This configuration property will populate the SERDES header with a schema ID that is of type String
-                { AvroPropertyKeys.SchemaHeaderIdentifiers, SchemaHeaderId.SchemaIdString }
+                { AvroPropertyKeys.SchemaHeaderIdentifiers, SchemaHeaderId.SchemaIdString },
+                // The Avro encoding must match the Content-Type so that a JSON Content-Type carries JSON-encoded Avro
+                { AvroPropertyKeys.EncodingType, ContentType == "JSON" ? AvroProperties.AvroEncoding.Json : AvroProperties.AvroEncoding.Binary }
             };
         }
 

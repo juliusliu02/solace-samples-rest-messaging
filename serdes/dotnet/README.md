@@ -18,9 +18,6 @@ The solution (`src/JsonSchema/JsonSchema.sln`) contains the following projects:
 | `RestJsonSchemaAsyncRequestReply` | Publishes a `CreateUser` request and listens on a separate local port for the `CreateUserResponse` delivered asynchronously by an RDP. |
 | `Resources` | Shared class library containing the `User`, `CreateUser`, and `CreateUserResponse` POCOs plus their embedded JSON schema files. |
 
-> [!NOTE]
-> Due to limitations regarding reply-to-topics in request/reply messaging over REST, there is no .NET sample application for an asynchronous SERDES replier. A synchronous replier (such as `RestJsonSchemaSyncRequestReplyConsumer` in this solution, or the [JsonSchemaSerdesReplier](https://github.com/SolaceSamples/solace-samples-dotnet/tree/master/src/features/serdes/JsonSchema/JsonSchemaSerdesReplier)) must be used.
-
 ### Avro Solution Projects
 
 The solution (`src/AvroSchema/AvroSchema.sln`) contains the following projects:
@@ -28,8 +25,18 @@ The solution (`src/AvroSchema/AvroSchema.sln`) contains the following projects:
 | Project | Description |
 | --- | --- |
 | `RestAvroSchemaPublisher` | Publishes Avro `User` records over HTTP POST to a Solace broker. The schema ID is sent as a `String` in the `Solace-User-Property-` header. |
+| `RestAvroSchemaPublisherWithSchemaId` | Same as `RestAvroSchemaPublisher`, but sends the schema ID as a `Long` (`int64`) using the `; type=int64` header suffix. |
 | `RestAvroSchemaConsumer` | Starts a local `HttpListener` that receives messages pushed from a Solace REST Delivery Point (RDP) and deserializes them into Avro `User` records. |
+| `RestAvroSchemaSyncRequestReplyProducer` | Sends an Avro `CreateUser` request over HTTP and synchronously waits for the `CreateUserResponse` in the same HTTP response body. |
+| `RestAvroSchemaSyncRequestReplyConsumer` | Receives Avro `CreateUser` requests via `HttpListener`, creates a `CreateUserResponse`, and returns it synchronously in the HTTP response. |
+| `RestAvroSchemaAsyncRequestReplyProducer` | Publishes an Avro `CreateUser` request and listens on a separate local port for the `CreateUserResponse` delivered asynchronously by an RDP. |
 | `Resources` | The same shared class library used by the JSON Schema samples. |
+
+### Limitation: No Asynchronous REST Replier
+
+There is no asynchronous REST replier sample. When the broker delivers a request to a REST consumer, the reply-to destination is not included in the HTTP request, so the consumer can't publish a reply on its own. The broker uses the consumer's HTTP response as the reply, so the reply must be completed within the same HTTP request. This is by design: a REST consumer can be any plain HTTP server, and it replies simply by answering the request. It does not need to know about Solace headers or connect back to the broker as a publisher. An asynchronous replier must use SMF instead, such as the [JsonSchemaSerdesReplier](https://github.com/SolaceSamples/solace-samples-dotnet/tree/master/src/features/serdes/JsonSchema/JsonSchemaSerdesReplier). Either kind of replier works with both the synchronous and asynchronous REST request/reply producers.
+
+For details, see the [Solace REST Message Encoding documentation](https://docs.solace.com/API/RESTMessagingPrtl/Solace-REST-Message-Encoding.htm#solace-specific-http-headers).
 
 ### Shared Resources
 
@@ -66,7 +73,10 @@ Before running the samples, the schemas for the format you are using must be upl
     - **Type**: Select `JSON Schema`.
 
     ### Avro Schema
-    - **Artifact Id**: For `user.avsc`, use `solace/samples/avro`
+    - **Artifact Id** (one per schema, each uploaded separately):
+        - For `user.avsc`, use `solace/samples/avro`
+        - For `create-user.avsc`, use `solace/samples/create-user/avro`
+        - For `create-user-response.avsc`, use `solace/samples/create-user-response/avro`
     - **Type**: Select `Avro Schema`.
 
 > [!NOTE]
@@ -82,6 +92,8 @@ Before running the samples, the schemas for the format you are using must be upl
         - For Artifact Id `solace/samples/create-user-response/json`, upload `create-user-response.json`
     - From `src/Resources/Serdes/AvroSchema/Schemas/`:
         - For Artifact Id `solace/samples/avro`, upload `user.avsc`
+        - For Artifact Id `solace/samples/create-user/avro`, upload `create-user.avsc`
+        - For Artifact Id `solace/samples/create-user-response/avro`, upload `create-user-response.avsc`
 7. Click "Next", skip Version Metadata, then click "Create".
 
 ## Broker Setup
@@ -91,17 +103,20 @@ Before running the samples, the schemas for the format you are using must be upl
 1. **Create a Queue** subscribed to `solace/samples/json` (JSON Schema) or `solace/samples/avro` (Avro).
 2. **Configure a REST Delivery Point (RDP)**:
     - Create a REST Delivery Point.
-    - Create a REST consumer pointing at the host/port where `RestJsonSchemaConsumer` will run.
+    - Create a REST consumer pointing at the host/port where `RestJsonSchemaConsumer` or `RestAvroSchemaConsumer` will run.
     - Add a queue binding that references the queue above and set the POST Request Target to match the `<post-request-target>` argument you will pass to the sample (for example, `/message`).
 
 ### For the Request/Reply Samples
 
-1. **Create Queues**:
-    - A queue subscribed to `solace/samples/create-user/json`
-    - A queue subscribed to `solace/samples/create-user-response/json`
-2. **Configure a REST Delivery Point** for the reply flow:
+1. **Create Queues** (use the `json` topics for the JSON Schema samples and the `avro` topics for the Avro samples):
+    - A queue subscribed to `solace/samples/create-user/json` or `solace/samples/create-user/avro`
+    - A queue subscribed to `solace/samples/create-user-response/json` or `solace/samples/create-user-response/avro`
+2. **Configure a REST Delivery Point** for the request flow, so the synchronous replier receives requests:
+    - Create a REST consumer pointing at the host/port of the synchronous request/reply consumer.
+    - Add a queue binding to the request queue and set its POST Request Target to match the `<post-request-target>` the consumer listens on (for example, `/message`).
+3. **Configure a REST Delivery Point** for the reply flow (only needed for the asynchronous request/reply producer):
     - Create a REST consumer pointing at the host/port of your requesting application.
-    - Add a queue binding to the queue subscribed to `solace/samples/create-user-response/json` and set its POST Request Target to match the value your requesting application is listening on (for example, `/message`).
+    - Add a queue binding to the reply queue and set its POST Request Target to match the value your requesting application is listening on (for example, `/message`).
 
 For more detailed RDP documentation, see the [Solace Documentation on REST Delivery Points](https://docs.solace.com/Services/Managing-RDPs.htm?Highlight=rest#configuring-REST-delivery-points).
 
@@ -204,9 +219,9 @@ dotnet run -- <host> <publishing-port> <reply-post-request-target> <listen-port>
 dotnet run -- localhost 9000 /message 38081
 ```
 
-### Avro Publisher and Consumer
+### Avro Samples
 
-The Avro samples take the same arguments as the JSON Schema publisher and consumer above.
+Each Avro sample takes the same arguments as its JSON Schema equivalent above.
 
 ```shell
 cd src/AvroSchema/RestAvroSchemaPublisher
@@ -214,8 +229,28 @@ dotnet run -- localhost 9000
 ```
 
 ```shell
+cd src/AvroSchema/RestAvroSchemaPublisherWithSchemaId
+dotnet run -- localhost 9000
+```
+
+```shell
 cd src/AvroSchema/RestAvroSchemaConsumer
 dotnet run -- /message 8080 X-Solace-Topic
+```
+
+```shell
+cd src/AvroSchema/RestAvroSchemaSyncRequestReplyProducer
+dotnet run -- localhost 9000
+```
+
+```shell
+cd src/AvroSchema/RestAvroSchemaSyncRequestReplyConsumer
+dotnet run -- /message 8080 X-Solace-Topic
+```
+
+```shell
+cd src/AvroSchema/RestAvroSchemaAsyncRequestReplyProducer
+dotnet run -- localhost 9000 /message 38081
 ```
 
 ## Environment Variables
@@ -229,9 +264,11 @@ export REGISTRY_PASSWORD="roPassword"
 export CONTENT_TYPE="BINARY"
 # Used by the publisher and consumer samples (the Avro samples default to "solace/samples/avro")
 export TOPIC="solace/samples/json"
-# Used by the request/reply samples
+# Used by the request/reply samples (the Avro samples default to the "/avro" equivalents)
 export REQUEST_TOPIC="solace/samples/create-user/json"
 export REPLY_TOPIC="solace/samples/create-user-response/json"
+# Used by the synchronous request/reply producers
+export SOLACE_REPLY_WAIT_TIME_IN_MS="10000"
 ```
 
-`CONTENT_TYPE` accepts `BINARY` (mapped to `application/octet-stream`, a Solace binary message) or `JSON` (mapped to `application/json`, a Solace text message). Any other value is passed through as-is as the HTTP `Content-Type`. For the Avro publisher, `JSON` also switches the serializer to Avro's JSON encoding; otherwise Avro's binary encoding is used. For details on how HTTP content types map to Solace message types, see the [Solace REST Message Encoding documentation](https://docs.solace.com/API/RESTMessagingPrtl/Solace-REST-Message-Encoding.htm#solace-message-type-mapping-to-http-content-type).
+`CONTENT_TYPE` accepts `BINARY` (mapped to `application/octet-stream`, a Solace binary message) or `JSON` (mapped to `application/json`, a Solace text message). Any other value is passed through as-is as the HTTP `Content-Type`. For the Avro publishers and `RestAvroSchemaSyncRequestReplyProducer`, `JSON` also switches the serializer to Avro's JSON encoding; otherwise Avro's binary encoding is used. For details on how HTTP content types map to Solace message types, see the [Solace REST Message Encoding documentation](https://docs.solace.com/API/RESTMessagingPrtl/Solace-REST-Message-Encoding.htm#solace-message-type-mapping-to-http-content-type).

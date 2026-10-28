@@ -253,7 +253,7 @@ namespace RestAvroSchemaSyncRequestReplyProducer
         }
 
         /// <summary>
-        /// Returns a configuration dictionary for the JSON Schema serializer.
+        /// Returns a configuration dictionary for the Avro serializer.
         /// Contains the Schema Registry URL and authentication credentials.
         /// Configures the schema header identifier as a String type.
         /// </summary>
@@ -273,7 +273,7 @@ namespace RestAvroSchemaSyncRequestReplyProducer
         }
 
         /// <summary>
-        /// Returns a configuration dictionary for the JSON Schema deserializer.
+        /// Returns a configuration dictionary for the Avro deserializer.
         /// Contains the Schema Registry URL and authentication credentials.
         /// </summary>
         /// <returns>A dictionary containing configuration properties</returns>
